@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/openark/golib/math"
+
 	"github.com/openark/orchestrator/go/config"
 )
 
@@ -84,6 +85,7 @@ type Instance struct {
 	ReplicationLagSeconds             sql.NullInt64
 	SlaveHosts                        InstanceKeyMap // for API backwards compatibility. Equals `Replicas`
 	Replicas                          InstanceKeyMap
+	Replicators                       InstanceKeyMap
 	ClusterName                       string
 	SuggestedClusterAlias             string
 	DataCenter                        string
@@ -153,6 +155,7 @@ type Instance struct {
 func NewInstance() *Instance {
 	return &Instance{
 		Replicas:                make(map[InstanceKey]bool),
+		Replicators:             make(map[InstanceKey]bool),
 		ReplicationGroupMembers: make(map[InstanceKey]bool),
 		Problems:                []string{},
 	}
@@ -405,6 +408,10 @@ func (this *Instance) NextGTID() (string, error) {
 // AddReplicaKey adds a replica to the list of this instance's replicas.
 func (this *Instance) AddReplicaKey(replicaKey *InstanceKey) {
 	this.Replicas.AddKey(*replicaKey)
+}
+
+func (this *Instance) AddReplicatorKey(replicatorKey *InstanceKey) {
+	this.Replicators.AddKey(*replicatorKey)
 }
 
 // AddGroupMemberKey adds a group member to the list of this instance's group members.

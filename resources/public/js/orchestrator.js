@@ -229,6 +229,9 @@ function openNodeModal(node) {
   if (node.isAggregate) {
     return false;
   }
+  if (node.isReplicator) {
+    return false;
+  }
   nodeModalVisible = true;
   var hiddenZone = $('#node_modal .hidden-zone');
   $('#node_modal #modalDataAttributesTable button[data-btn][data-grouped!=true]').appendTo("#node_modal .modal-footer");
@@ -711,6 +714,7 @@ function normalizeInstanceProblem(instance) {
 }
 
 var virtualInstanceCounter = 0;
+var replicatorInstanceCounter = 0;
 
 function createVirtualInstance() {
   var virtualInstance = {
@@ -728,6 +732,25 @@ function createVirtualInstance() {
   }
   normalizeInstanceProblem(virtualInstance);
   return virtualInstance;
+}
+
+function createReplicatorInstance() {
+  var replicatorInstance = {
+    children: [],
+    parent: null,
+    hasMaster: false,
+    inMaintenance: false,
+    maintenanceEntry: null,
+    isMaster: false,
+    isCoMaster: false,
+    isVirtual: false,
+    isReplicator: true,
+    ReplicationGroupName: "",
+    ReplicationLagSeconds: 0,
+    SecondsSinceLastSeen: 0
+  }
+  normalizeInstanceProblem(replicatorInstance);
+  return replicatorInstance;
 }
 
 function normalizeInstances(instances, maintenanceList) {
@@ -815,6 +838,19 @@ function normalizeInstances(instances, maintenanceList) {
 
       instancesMap[virtualCoMastersRoot.id] = virtualCoMastersRoot;
     }
+
+    instance.Replicators.forEach(function (replicator) {
+      var virtualReplicator = createReplicatorInstance()
+      virtualReplicator.id = getInstanceId(replicator.Hostname, replicator.Port) + (replicatorInstanceCounter++);
+      virtualReplicator.title = replicator.Hostname + ':' + replicator.Port;
+      virtualReplicator.canonicalTitle = virtualReplicator.title;
+      virtualReplicator.parent = instance
+      virtualReplicator.masterNode = instance
+      virtualReplicator.hasMaster = true
+      instance.children.push(virtualReplicator)
+
+      instancesMap[virtualReplicator.id] = virtualReplicator;
+    })
   });
   return instancesMap;
 }
@@ -860,9 +896,12 @@ function renderInstanceElement(popoverElement, instance, renderType) {
     if (instance.PhysicalEnvironment) { tooltip += "\nPhysical environment: " + instance.PhysicalEnvironment; }
   }
   popoverElement.find("h3").attr('title', tooltip);
+  var configHtml = "";
+  if (!instance.isReplicator) {
+    configHtml = '</div><div class="pull-right instance-glyphs"><span class="glyphicon glyphicon-cog" title="Open config dialog"></span></div>'
+  }
   popoverElement.find("h3").html('&nbsp;<div class="pull-left">' +
-    (isAnonymized() ? anonymizedInstanceId : isAliased() ? instance.InstanceAlias : instance.canonicalTitle) +
-    '</div><div class="pull-right instance-glyphs"><span class="glyphicon glyphicon-cog" title="Open config dialog"></span></div>');
+    (isAnonymized() ? anonymizedInstanceId : isAliased() ? instance.InstanceAlias : instance.canonicalTitle) + configHtml);
   var indicateLastSeenInStatus = false;
 
   if (instance.isAggregate) {
@@ -901,7 +940,7 @@ function renderInstanceElement(popoverElement, instance, renderType) {
     if (instance.UsingPseudoGTID) {
       popoverElement.find("h3 div.pull-right").prepend('<span class="glyphicon glyphicon-globe" title="Using Pseudo GTID"></span> ');
     }
-    if (!instance.ReadOnly) {
+    if (!instance.isReplicator && !instance.ReadOnly) {
       popoverElement.find("h3 div.pull-right").prepend('<span class="glyphicon glyphicon-pencil" title="Writeable"></span> ');
     }
     if (instance.isMostAdvancedOfSiblings) {
@@ -955,6 +994,8 @@ function renderInstanceElement(popoverElement, instance, renderType) {
     if (instance.lastCheckInvalidProblem()) {
       instance.renderHint = "fatal";
       indicateLastSeenInStatus = true;
+    } else if (instance.isReplicator && instance.parent.notReplicatingProblem()) {
+      instance.renderHint = "danger";
     } else if (instance.notRecentlyCheckedProblem()) {
       instance.renderHint = "stale";
       indicateLastSeenInStatus = true;
@@ -977,12 +1018,18 @@ function renderInstanceElement(popoverElement, instance, renderType) {
     if (instance.renderHint != "") {
       popoverElement.find("h3").addClass("label-" + instance.renderHint);
     }
-    var statusMessage = formattedInterval(instance.ReplicationLagSeconds.Int64) + ' lag';
-    if (indicateLastSeenInStatus) {
-      statusMessage = 'seen ' + formattedInterval(instance.SecondsSinceLastSeen.Int64) + ' ago';
+
+    var statusMessage = ""
+    if (!instance.isReplicator) {
+      statusMessage = formattedInterval(instance.ReplicationLagSeconds.Int64) + ' lag';
+      if (indicateLastSeenInStatus) {
+        statusMessage = 'seen ' + formattedInterval(instance.SecondsSinceLastSeen.Int64) + ' ago';
+      }
     }
     var identityHtml = '';
-    if (isAnonymized()) {
+    if (instance.isReplicator) {
+      identityHtml += "MySQL replicator"
+    } else if (isAnonymized()) {
       identityHtml += instance.Version.match(/[^.]+[.][^.]+/);
     } else {
       identityHtml += instance.Version;
@@ -994,7 +1041,7 @@ function renderInstanceElement(popoverElement, instance, renderType) {
       }
       identityHtml += " " + format;
     }
-    if (!isAnonymized()) {
+    if (!isAnonymized() && !instance.isReplicator) {
       identityHtml += ', ' + instance.FlavorName;
     }
 

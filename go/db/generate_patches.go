@@ -617,4 +617,9 @@ var generateSQLPatches = []string{
 		database_instance
 			ADD COLUMN replication_group_primary_port smallint(5) unsigned NOT NULL DEFAULT 0 AFTER replication_group_primary_host
 	`,
+	`
+		ALTER TABLE
+		database_instance
+			ADD COLUMN replicator_hosts text CHARACTER SET ascii AFTER replication_group_primary_port
+	`,
 }

@@ -733,6 +733,9 @@ body {
     border-radius: 6px;
 }
 
+.instance.instance-replicator {
+    cursor: default;
+}
 
 .instance.instance-diagram,
 .instance.instance-problem,

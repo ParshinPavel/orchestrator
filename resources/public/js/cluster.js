@@ -223,7 +223,11 @@ function Cluster() {
     var id = $(svgInstanceWrapper).attr("data-fo-id");
     var node = nodesMap[id];
 
-    var instanceEl = Instance.createElement(node).addClass("instance-diagram arrow_box").appendTo("#cluster_container");
+    var instanceElClasses = "instance-diagram arrow_box";
+    if (node.isReplicator) {
+      instanceElClasses += " instance-replicator";
+    }
+    var instanceEl = Instance.createElement(node).addClass(instanceElClasses).appendTo("#cluster_container");
     $(instanceEl).hide();
     $(svgInstanceWrapper).data("instance-popover", instanceEl);
     $(instanceEl).data("svg-instance-wrapper", svgInstanceWrapper);
@@ -260,9 +264,11 @@ function Cluster() {
       }
     }
 
-    activateInstanceDraggable(instanceEl);
-    prepareInstanceDroppable(normalSectionEl);
-    prepareInstanceMasterSectionDroppable(masterSectionEl);
+    if (!node.isReplicator) {
+      activateInstanceDraggable(instanceEl);
+      prepareInstanceDroppable(normalSectionEl);
+      prepareInstanceMasterSectionDroppable(masterSectionEl);
+    }
   }
 
   function instanceEl_getTrailerEl(instanceEl) {
