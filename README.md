@@ -3,6 +3,13 @@
 ![](https://github.com/openark/orchestrator/workflows/system%20tests/badge.svg)
 [![downloads](https://img.shields.io/github/downloads/openark/orchestrator/total.svg)](https://github.com/openark/orchestrator/releases) [![release](https://img.shields.io/github/release/openark/orchestrator.svg)](https://github.com/openark/orchestrator/releases)
 
+# About fork
+
+This fork adds some extra features to orchestrator:
+
+* You can send cluster messages to display them in UI. It is useful for noticing users after failover/switchover.
+* Replicators visualization, e.g. from MySQL into Tarantool (list them in config option `DiscoveryReplicatorHostnames`).
+
 # orchestrator [[Documentation]](https://github.com/openark/orchestrator/tree/master/docs)
 
 
