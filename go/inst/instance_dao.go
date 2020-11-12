@@ -21,7 +21,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"regexp"
 	"runtime"
 	"sort"
@@ -29,6 +28,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/openark/golib/log"
 	"github.com/openark/golib/math"
@@ -657,7 +658,8 @@ func ReadTopologyInstanceBufferable(instanceKey *InstanceKey, bufferWrites bool,
 				// good prior to calling ResolveHostname()
 				host := m.GetString("Host")
 				port := m.GetIntD("Port", 0)
-				if host == "" || port == 0 {
+
+				if host == "" {
 					if isMaxScale && host == "" && port == 0 {
 						// MaxScale reports a bad response sometimes so ignore it.
 						// - seen in 1.1.0 and 1.4.3.4
@@ -668,13 +670,23 @@ func ReadTopologyInstanceBufferable(instanceKey *InstanceKey, bufferWrites bool,
 				}
 
 				replicaKey, err := NewResolveInstanceKey(host, port)
-				if err == nil && replicaKey.IsValid() {
-					if !RegexpMatchPatterns(replicaKey.StringCode(), config.Config.DiscoveryIgnoreReplicaHostnameFilters) {
-						instance.AddReplicaKey(replicaKey)
-					}
-					foundByShowSlaveHosts = true
+				if err != nil {
+					return err
 				}
-				return err
+
+				code := replicaKey.StringCode()
+				if RegexpMatchPatterns(code, config.Config.DiscoveryIgnoreReplicaHostnameFilters) {
+					foundByShowSlaveHosts = true
+				} else if RegexpMatchPatterns(code, config.Config.DiscoveryReplicatorHostnames) {
+					foundByShowSlaveHosts = true
+					replicaKey.Replicator = true
+					instance.AddReplicatorKey(replicaKey)
+				} else if replicaKey.IsValid() {
+					foundByShowSlaveHosts = true
+					instance.AddReplicaKey(replicaKey)
+				}
+
+				return nil
 			})
 
 		logReadTopologyInstanceError(instanceKey, "show slave hosts", err)
@@ -699,7 +711,14 @@ func ReadTopologyInstanceBufferable(instanceKey *InstanceKey, bufferWrites bool,
 						logReadTopologyInstanceError(instanceKey, "ResolveHostname: processlist", resolveErr)
 					}
 					replicaKey := InstanceKey{Hostname: cname, Port: instance.Key.Port}
-					if !RegexpMatchPatterns(replicaKey.StringCode(), config.Config.DiscoveryIgnoreReplicaHostnameFilters) {
+
+					code := replicaKey.StringCode()
+					if RegexpMatchPatterns(code, config.Config.DiscoveryIgnoreReplicaHostnameFilters) {
+						return err
+					} else if RegexpMatchPatterns(code, config.Config.DiscoveryReplicatorHostnames) {
+						replicaKey.Replicator = true
+						instance.AddReplicatorKey(&replicaKey)
+					} else if replicaKey.IsValid() {
 						instance.AddReplicaKey(&replicaKey)
 					}
 					return err
@@ -1251,6 +1270,9 @@ func readInstanceRow(m sqlutils.RowMap) *Instance {
 		Port: m.GetInt("replication_group_primary_port")}
 	instance.ReplicationGroupMembers.ReadJson(m.GetString("replication_group_members"))
 	//instance.ReplicationGroup = m.GetString("replication_group_")
+
+	replicatorsJSON := m.GetString("replicator_hosts")
+	instance.Replicators.ReadJson(replicatorsJSON)
 
 	// problems
 	if !instance.IsLastCheckValid {
@@ -2535,6 +2557,7 @@ func mkInsertOdkuForInstances(instances []*Instance, instanceWasActuallyFound bo
 		"replication_group_members",
 		"replication_group_primary_host",
 		"replication_group_primary_port",
+		"replicator_hosts",
 	}
 
 	var values []string = make([]string, len(columns), len(columns))
@@ -2628,6 +2651,7 @@ func mkInsertOdkuForInstances(instances []*Instance, instanceWasActuallyFound bo
 		args = append(args, instance.ReplicationGroupMembers.ToJSONString())
 		args = append(args, instance.ReplicationGroupPrimaryInstanceKey.Hostname)
 		args = append(args, instance.ReplicationGroupPrimaryInstanceKey.Port)
+		args = append(args, instance.Replicators.ToJSONString())
 	}
 
 	sql, err := mkInsertOdku("database_instance", columns, values, len(instances), insertIgnore)

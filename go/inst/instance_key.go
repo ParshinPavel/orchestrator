@@ -18,16 +18,18 @@ package inst
 
 import (
 	"fmt"
-	"github.com/openark/orchestrator/go/config"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/openark/orchestrator/go/config"
 )
 
 // InstanceKey is an instance indicator, identifued by hostname and port
 type InstanceKey struct {
-	Hostname string
-	Port     int
+	Hostname   string
+	Port       int
+	Replicator bool `json:"-"`
 }
 
 var (
@@ -150,6 +152,10 @@ func (this *InstanceKey) IsValid() bool {
 	if this.IsDetached() {
 		return false
 	}
+	if this.Replicator {
+		return len(this.Hostname) > 0
+	}
+
 	return len(this.Hostname) > 0 && this.Port > 0
 }
 

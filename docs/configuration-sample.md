@@ -34,6 +34,9 @@ The following is a production configuration file, with some details redacted.
     ".*[.]ignore_all_hosts_from_this_domain[.]example[.]com",
     "a_host_with_extra_port_i_want_to_ignore[.]example[.]com:3307"
   ],
+  "DiscoveryReplicatorHostnames": [
+    "tarantool[.].*"      
+  ],
   "ReadLongRunningQueries": false,
   "SkipMaxScaleCheck": true,
   "BinlogFileHistoryDays": 10,

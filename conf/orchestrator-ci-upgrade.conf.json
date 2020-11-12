@@ -23,6 +23,8 @@
   "InstancePollSeconds": 5,
   "DiscoveryIgnoreReplicaHostnameFilters": [
   ],
+  "DiscoveryReplicatorHostnames": [
+  ],
   "UnseenInstanceForgetHours": 240,
   "SnapshotTopologiesIntervalHours": 0,
   "InstanceBulkOperationsWaitTimeoutSeconds": 10,
