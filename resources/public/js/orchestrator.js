@@ -358,7 +358,9 @@ function openNodeModal(node) {
     if (node.GtidErrant) {
       td = addNodeModalDataAttribute("GTID errant", node.GtidErrant);
       $('#node_modal [data-btn-group=gtid-errant-fix]').appendTo(td.find("div"))
-      $('#node_modal [data-btn-group=gtid-errant-fix]').show();
+      if (node.GtidErrantCouldFix) {
+        $('#node_modal [data-btn-group=gtid-errant-fix]').show();
+      }
     }
   }
   addNodeModalDataAttribute("Semi-sync enforced", booleanString(node.SemiSyncEnforced));

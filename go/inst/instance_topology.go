@@ -1419,6 +1419,12 @@ func ErrantGTIDInjectEmpty(instanceKey *InstanceKey) (instance *Instance, cluste
 		return instance, clusterMaster, countInjectedTransactions, err
 	}
 	explodedEntries := gtidSet.Explode()
+
+	insertLimit := config.Config.ErrantInjectEmptyTransactionsLimit
+	if len(explodedEntries) > insertLimit {
+		return instance, clusterMaster, countInjectedTransactions, log.Errorf("gtid-errant-inject-empty: too many empty transactions %+v should be inserted on cluster master %+v", len(explodedEntries), clusterMaster.Key)
+	}
+
 	log.Infof("gtid-errant-inject-empty: about to inject %+v empty transactions %+v on cluster master %+v", len(explodedEntries), gtidSet.String(), clusterMaster.Key)
 	for _, entry := range explodedEntries {
 		if err := injectEmptyGTIDTransaction(&clusterMaster.Key, entry); err != nil {
