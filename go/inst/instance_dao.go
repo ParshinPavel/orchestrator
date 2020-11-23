@@ -1205,6 +1205,13 @@ func readInstanceRow(m sqlutils.RowMap) *Instance {
 	instance.GTIDMode = m.GetString("gtid_mode")
 	instance.GtidPurged = m.GetString("gtid_purged")
 	instance.GtidErrant = m.GetString("gtid_errant")
+	instance.GtidErrantCouldFix = false
+	if instance.GtidErrant != "" {
+		gtidSet, err := NewOracleGtidSet(instance.GtidErrant)
+		if err == nil {
+			instance.GtidErrantCouldFix = len(gtidSet.Explode()) <= config.Config.ErrantInjectEmptyTransactionsLimit
+		}
+	}
 	instance.UsingMariaDBGTID = m.GetBool("mariadb_gtid")
 	instance.UsingPseudoGTID = m.GetBool("pseudo_gtid")
 	instance.SelfBinlogCoordinates.LogFile = m.GetString("binary_log_file")

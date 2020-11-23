@@ -270,6 +270,7 @@ type Configuration struct {
 	KVClusterMasterPrefix                      string            // Prefix to use for clusters' masters entries in KV stores (internal, consul, ZK), default: "mysql/master"
 	WebMessage                                 string            // If provided, will be shown on all web pages below the title bar
 	MaxConcurrentReplicaOperations             int               // Maximum number of concurrent operations on replicas
+	ErrantInjectEmptyTransactionsLimit         int               // Maximum allowed number of empty transactions to be inserted to fix errant GTIDs
 }
 
 // ToJSONString will marshal this configuration as JSON
@@ -438,6 +439,7 @@ func newConfiguration() *Configuration {
 		KVClusterMasterPrefix:                      "mysql/master",
 		WebMessage:                                 "",
 		MaxConcurrentReplicaOperations:             5,
+		ErrantInjectEmptyTransactionsLimit:         50,
 	}
 }
 

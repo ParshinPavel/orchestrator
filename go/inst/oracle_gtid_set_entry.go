@@ -73,3 +73,20 @@ func (this *OracleGtidSetEntry) Explode() (result [](*OracleGtidSetEntry)) {
 	}
 	return result
 }
+
+func (this *OracleGtidSetEntry) Len() int {
+	res := 0
+
+	intervals := strings.Split(this.Ranges, ":")
+	for _, interval := range intervals {
+		if submatch := multiValueInterval.FindStringSubmatch(interval); submatch != nil {
+			intervalStart, _ := strconv.Atoi(submatch[1])
+			intervalEnd, _ := strconv.Atoi(submatch[2])
+			res += intervalEnd - intervalStart + 1
+		} else if submatch := singleValueInterval.FindStringSubmatch(interval); submatch != nil {
+			res++
+		}
+	}
+
+	return res
+}

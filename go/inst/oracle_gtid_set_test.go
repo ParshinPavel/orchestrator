@@ -28,6 +28,27 @@ func TestNewOracleGtidSetEntry(t *testing.T) {
 	}
 }
 
+func TestLen(t *testing.T) {
+	{
+		uuidSet := "00020194-3333-3333-3333-333333333333:1"
+		entry, err := NewOracleGtidSetEntry(uuidSet)
+		test.S(t).ExpectNil(err)
+		test.S(t).ExpectEquals(entry.Len(), 1)
+	}
+	{
+		uuidSet := "00020194-3333-3333-3333-333333333333:1-7"
+		entry, err := NewOracleGtidSetEntry(uuidSet)
+		test.S(t).ExpectNil(err)
+		test.S(t).ExpectEquals(entry.Len(), 7)
+	}
+	{
+		uuidSet := "00020194-3333-3333-3333-333333333333:1-7:10-20"
+		entry, err := NewOracleGtidSetEntry(uuidSet)
+		test.S(t).ExpectNil(err)
+		test.S(t).ExpectEquals(entry.Len(), 18)
+	}
+}
+
 func TestExplode(t *testing.T) {
 	{
 		uuidSet := "00020194-3333-3333-3333-333333333333:7"

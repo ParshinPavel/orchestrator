@@ -78,6 +78,7 @@ type Instance struct {
 	ExecutedGtidSet       string
 	GtidPurged            string
 	GtidErrant            string
+	GtidErrantCouldFix    bool
 
 	masterExecutedGtidSet string // Not exported
 
