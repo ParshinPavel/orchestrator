@@ -246,3 +246,43 @@ func TestSharedUUIDs(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkOracleGtidSet_Len(b *testing.B) {
+	gtidSetVal := "61a4c514-3446-11eb-a0f6-1c34da13bfe1:1-10687252"
+	gotLen := 0
+	wantLen := 10687252
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		gtidSet, err := NewOracleGtidSet(gtidSetVal)
+		if err != nil {
+			b.Fatalf("err expected to be nil, got: %v", err)
+		}
+
+		gotLen = gtidSet.Len()
+	}
+
+	if gotLen != wantLen {
+		b.Fatalf("expected len (%d) to be equal %d", gotLen, wantLen)
+	}
+}
+
+func BenchmarkOracleGtidSet_LenByExplode(b *testing.B) {
+	gtidSetVal := "61a4c514-3446-11eb-a0f6-1c34da13bfe1:1-10687252"
+	gotLen := 0
+	wantLen := 10687252
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		gtidSet, err := NewOracleGtidSet(gtidSetVal)
+		if err != nil {
+			b.Fatalf("err expected to be nil, got: %v", err)
+		}
+
+		gotLen = len(gtidSet.Explode())
+	}
+
+	if gotLen != wantLen {
+		b.Fatalf("expected len (%d) to be equal %d", gotLen, wantLen)
+	}
+}

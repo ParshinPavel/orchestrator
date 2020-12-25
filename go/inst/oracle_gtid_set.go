@@ -115,6 +115,14 @@ func (this *OracleGtidSet) Explode() (result [](*OracleGtidSetEntry)) {
 	return result
 }
 
+func (this *OracleGtidSet) Len() int {
+	result := 0
+	for _, entries := range this.GtidEntries {
+		result += entries.Len()
+	}
+	return result
+}
+
 func (this *OracleGtidSet) String() string {
 	tokens := []string{}
 	for _, entry := range this.GtidEntries {

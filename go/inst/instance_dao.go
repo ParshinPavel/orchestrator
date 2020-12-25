@@ -1209,7 +1209,7 @@ func readInstanceRow(m sqlutils.RowMap) *Instance {
 	if instance.GtidErrant != "" {
 		gtidSet, err := NewOracleGtidSet(instance.GtidErrant)
 		if err == nil {
-			instance.GtidErrantCouldFix = len(gtidSet.Explode()) <= config.Config.ErrantInjectEmptyTransactionsLimit
+			instance.GtidErrantCouldFix = gtidSet.Len() <= config.Config.ErrantInjectEmptyTransactionsLimit
 		}
 	}
 	instance.UsingMariaDBGTID = m.GetBool("mariadb_gtid")
